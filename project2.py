@@ -85,7 +85,7 @@ st.markdown("""
 
 # ─── HEADER ──────────────────────────────────────────────────────────────────
 
-st.image("banner_nhatot.png", use_container_width=True)
+st.image("banner_nhatot.png", width="stretch")
 st.markdown("""
 <div class="header-container">
     <div class="main-title">Đồ án tốt nghiệp - Data Science and Machine Learning</div>
@@ -97,7 +97,7 @@ st.markdown("""
 
 st.sidebar.markdown("### MENU")
 choice = st.sidebar.selectbox(
-    '',
+    'Chọn chức năng',
     ['Tổng quan', 'Hệ thống gợi ý nhà dựa trên nội dung', 'Hệ thống phân cụm nhà'],
     help="Chọn phần bạn muốn khám phá"
 )
@@ -140,8 +140,9 @@ elif choice == 'Hệ thống gợi ý nhà dựa trên nội dung':
         df["dien_tich"].astype(str).str.replace(r"[^\d.]", "", regex=True), errors="coerce"
     )
     df = df.dropna(subset=["gia_ban_num", "dien_tich_num"])
+    df['ma_can'] = df['ma_can'].astype(str)
 
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
 
     # ── Tìm nhà tương tự theo dropdown ──────────────────────────────────────
     st.write("### 1. Tìm kiếm nhà tương tự")
@@ -149,7 +150,7 @@ elif choice == 'Hệ thống gợi ý nhà dựa trên nội dung':
     idx = df[df['tieu_de'] == selected_house].index[0]
 
     st.write("### Thông tin nhà đã chọn:")
-    st.dataframe(df.iloc[[idx]][["tieu_de", "gia_ban", "dien_tich"]], use_container_width=True)
+    st.dataframe(df.iloc[[idx]][["tieu_de", "gia_ban", "dien_tich"]], width="stretch")
 
     st.write("Thông tin các ngôi nhà tương tự:")
     selected_row = df.iloc[idx]
@@ -157,7 +158,7 @@ elif choice == 'Hệ thống gợi ý nhà dựa trên nội dung':
         (abs(df["gia_ban_num"] - selected_row["gia_ban_num"]) < 50) &
         (abs(df["dien_tich_num"] - selected_row["dien_tich_num"]) < 20)
     ].drop(index=idx).head(5)
-    st.dataframe(similar_houses[["tieu_de", "gia_ban", "dien_tich"]], use_container_width=True)
+    st.dataframe(similar_houses[["tieu_de", "gia_ban", "dien_tich"]], width="stretch")
 
     # ── Tìm kiếm bằng từ khoá ────────────────────────────────────────────────
     st.write("### 2. Tìm kiếm bằng từ khoá")
@@ -165,7 +166,7 @@ elif choice == 'Hệ thống gợi ý nhà dựa trên nội dung':
     if st.button("Tìm kiếm"):
         result = df[df['tieu_de'].str.lower().str.contains(search.lower(), na=False)]
         st.write("Danh sách nhà tìm được:")
-        st.dataframe(result[["tieu_de", "gia_ban", "dien_tich"]], use_container_width=True)
+        st.dataframe(result[["tieu_de", "gia_ban", "dien_tich"]], width="stretch")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TRANG 3: HỆ THỐNG PHÂN CỤM NHÀ (tích hợp toàn bộ app.py)
@@ -178,7 +179,13 @@ elif choice == 'Hệ thống phân cụm nhà':
 
     @st.cache_data
     def load_data():
-        return pd.read_csv("data_with_clusters.csv")
+        df = pd.read_csv("data_with_clusters.csv")
+        
+        # Fix: ép tất cả cột object về str thuần để tránh lỗi PyArrow
+        for col in df.select_dtypes(include="object").columns:
+            df[col] = df[col].astype(str)
+        
+        return df
 
     @st.cache_resource
     def load_model():
@@ -296,7 +303,7 @@ elif choice == 'Hệ thống phân cụm nhà':
                 )
                 fig_pca.update_traces(marker=dict(size=5))
                 fig_pca.update_layout(legend_title="Cụm BĐS")
-                st.plotly_chart(fig_pca, use_container_width=True)
+                st.plotly_chart(fig_pca, width="stretch")
 
             with col_info:
                 st.markdown("**Số lượng theo cụm:**")
@@ -345,7 +352,7 @@ elif choice == 'Hệ thống phân cụm nhà':
                 yaxis_title="Inertia (Within-cluster SSE)",
                 height=350,
             )
-            st.plotly_chart(fig_elbow, use_container_width=True)
+            st.plotly_chart(fig_elbow, width="stretch")
 
         with col_s:
             fig_sil = go.Figure()
@@ -364,7 +371,7 @@ elif choice == 'Hệ thống phân cụm nhà':
                 yaxis_title="Silhouette Score (cao hơn = tốt hơn)",
                 height=350,
             )
-            st.plotly_chart(fig_sil, use_container_width=True)
+            st.plotly_chart(fig_sil, width="stretch")
 
         st.info(
             f"✅ **Số cụm được chọn: k = {best_k}** "
@@ -403,14 +410,14 @@ elif choice == 'Hệ thống phân cụm nhà':
                     height=400,
                 )
                 fig_box.update_layout(showlegend=False)
-                st.plotly_chart(fig_box, use_container_width=True)
+                st.plotly_chart(fig_box, width="stretch")
 
             # Bảng thống kê trung bình
             st.markdown("#### Bảng thống kê trung bình theo cụm")
             stats_df = df_filtered.groupby("cum_label")[list(features_show.keys())].mean().round(2)
             stats_df.columns = list(features_show.values())
             stats_df["Số lượng"] = df_filtered.groupby("cum_label").size()
-            st.dataframe(stats_df.style.background_gradient(cmap="Blues"), use_container_width=True)
+            st.dataframe(stats_df.style.background_gradient(cmap="Blues"), width="stretch")
 
             # Radar chart
             st.markdown("#### Biểu đồ Radar so sánh cụm")
@@ -433,7 +440,7 @@ elif choice == 'Hệ thống phân cụm nhà':
                 height=420,
                 title="Radar Chart – Đặc trưng chuẩn hóa theo cụm",
             )
-            st.plotly_chart(fig_radar, use_container_width=True)
+            st.plotly_chart(fig_radar, width="stretch")
 
     # ════ TAB 4: PHÂN TÍCH THEO QUẬN ══════════════════════════════════════════
     with tab4:
@@ -454,7 +461,7 @@ elif choice == 'Hệ thống phân cụm nhà':
                     title="Phân bố số lượng BĐS theo quận & cụm",
                     height=380,
                 )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, width="stretch")
 
             with col_b:
                 avg_price = df_filtered.groupby("quan")["gia_ban_ty"].mean().reset_index()
@@ -466,7 +473,7 @@ elif choice == 'Hệ thống phân cụm nhà':
                 )
                 fig_price.update_traces(textposition="outside")
                 fig_price.update_layout(showlegend=False)
-                st.plotly_chart(fig_price, use_container_width=True)
+                st.plotly_chart(fig_price, width="stretch")
 
             fig_scatter = px.scatter(
                 df_filtered.sample(min(2000, len(df_filtered)), random_state=42),
@@ -476,7 +483,7 @@ elif choice == 'Hệ thống phân cụm nhà':
                 labels={"dien_tich_m2": "Diện tích (m²)", "gia_ban_ty": "Giá bán (tỷ)"},
                 height=420,
             )
-            st.plotly_chart(fig_scatter, use_container_width=True)
+            st.plotly_chart(fig_scatter, width="stretch")
 
     # ════ TAB 5: DỰ ĐOÁN CỤM ══════════════════════════════════════════════════
     with tab5:
@@ -493,7 +500,7 @@ elif choice == 'Hệ thống phân cụm nhà':
             inp_vs   = st.number_input("🚽 Số phòng vệ sinh",      min_value=1, max_value=10, value=2, step=1)
             inp_tang = st.number_input("🏢 Tổng số tầng",          min_value=1, max_value=20, value=3, step=1)
 
-        if st.button("🚀 Dự đoán cụm", type="primary", use_container_width=True):
+        if st.button("🚀 Dự đoán cụm", type="primary", width="stretch"):
             input_data     = np.array([[inp_gia, inp_dt, inp_gia_m2, inp_pn, inp_vs, inp_tang]])
             input_scaled   = scaler.transform(input_data)
             pred_cluster   = kmeans.predict(input_scaled)[0]
@@ -527,7 +534,7 @@ elif choice == 'Hệ thống phân cụm nhà':
                 title="Khoảng cách đến các trung tâm cụm (càng nhỏ càng gần)",
                 labels={"x": "Cụm", "y": "Khoảng cách"},
             )
-            st.plotly_chart(fig_dist, use_container_width=True)
+            st.plotly_chart(fig_dist, width="stretch")
 
     # ── Xem dữ liệu thô & tải CSV ─────────────────────────────────────────────
     st.divider()
@@ -541,7 +548,7 @@ elif choice == 'Hệ thống phân cụm nhà':
         display_cols = [c for c in rename_map if c in df_filtered.columns]
         st.dataframe(
             df_filtered[display_cols].rename(columns=rename_map),
-            use_container_width=True, height=300,
+            width="stretch", height=300,
         )
         st.download_button(
             "⬇️ Tải CSV",
